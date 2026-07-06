@@ -657,16 +657,19 @@
         }
         
         function updateQuantity(productId, change) {
+            change = parseInt(change, 10);
+            if (isNaN(change) || change === 0) return;
+
             for (var i = 0; i < cart.length; i++) {
                 if (cart[i].product.id === productId) {
-                    if (change === -1 && cart[i].quantity === 1) {
+                    var newQuantity = cart[i].quantity + change;
+
+                    if (newQuantity <= 0) {
                         confirmRemoveFromCart(productId);
                         return;
                     }
-                    cart[i].quantity += change;
-                    if (cart[i].quantity <= 0) {
-                        cart.splice(i, 1);
-                    }
+
+                    cart[i].quantity = newQuantity;
                     break;
                 }
             }
@@ -874,6 +877,11 @@
         // 問題15: 載入時沒有錯誤處理
         window.addEventListener('load', function() {
             loadProducts();
+
+            // Prevent cart from closing when +/- buttons re-render cart items mid-click
+            document.getElementById('cartSidebar').addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
         });
         
         // 問題16: 沒有清理事件監聽器
