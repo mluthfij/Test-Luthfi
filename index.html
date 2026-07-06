@@ -221,6 +221,13 @@
             border-top: 2px solid #ddd;
         }
         
+        .total-quantity {
+            text-align: center;
+            color: #666;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
         .total-price {
             font-size: 24px;
             font-weight: bold;
@@ -401,6 +408,7 @@
             <p style="text-align: center; color: #999; margin-top: 50px;">購物車是空的</p>
         </div>
         <div class="cart-total">
+            <div class="total-quantity">共 <span id="totalQuantity">0</span> 件商品</div>
             <div class="total-price">總計: NT$ <span id="totalPrice">0</span></div>
             <button class="checkout-btn" onclick="checkout()">結帳</button>
         </div>
@@ -545,21 +553,30 @@
             updateCartDisplay();
         }
         
+        function getTotalQuantity() {
+            var total = 0;
+            for (var i = 0; i < cart.length; i++) {
+                total += cart[i].quantity;
+            }
+            return total;
+        }
+
         // 問題11: 重複的 DOM 查詢和操作
         function updateCartDisplay() {
             var cartCount = document.getElementById('cartCount');
             var cartItems = document.getElementById('cartItems');
+            var totalQuantity = document.getElementById('totalQuantity');
             var totalPrice = document.getElementById('totalPrice');
             
-            var totalItems = 0;
+            var totalItems = getTotalQuantity();
             var total = 0;
             
             for (var i = 0; i < cart.length; i++) {
-                totalItems += cart[i].quantity;
                 total += cart[i].product.price * cart[i].quantity;
             }
             
             cartCount.textContent = totalItems;
+            totalQuantity.textContent = totalItems;
             totalPrice.textContent = total;
             
             if (cart.length === 0) {
