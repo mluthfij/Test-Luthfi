@@ -367,6 +367,89 @@
             padding: 40px;
             font-size: 16px;
         }
+
+        .remove-item-btn {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 5px;
+            padding: 0;
+        }
+
+        .remove-item-btn:hover {
+            color: #ff6b6b;
+        }
+
+        /* Dialog */
+        .dialog-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dialog-overlay.open {
+            display: flex;
+        }
+
+        .dialog {
+            background-color: white;
+            border-radius: 8px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .dialog-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 12px;
+        }
+
+        .dialog-message {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .dialog-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .dialog-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .dialog-btn-cancel {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .dialog-btn-confirm {
+            background-color: #ff6b6b;
+            color: white;
+        }
+
+        .dialog-btn-confirm.checkout {
+            background-color: #4CAF50;
+        }
     </style>
 </head>
 <body>
@@ -410,7 +493,18 @@
         <div class="cart-total">
             <div class="total-quantity">共 <span id="totalQuantity">0</span> 件商品</div>
             <div class="total-price">總計: NT$ <span id="totalPrice">0</span></div>
-            <button class="checkout-btn" onclick="checkout()">結帳</button>
+            <button class="checkout-btn" onclick="confirmCheckout()">結帳</button>
+        </div>
+    </div>
+
+    <div class="dialog-overlay" id="dialogOverlay" onclick="onDialogOverlayClick(event)">
+        <div class="dialog" onclick="event.stopPropagation()">
+            <div class="dialog-title" id="dialogTitle"></div>
+            <div class="dialog-message" id="dialogMessage"></div>
+            <div class="dialog-actions">
+                <button class="dialog-btn dialog-btn-cancel" id="dialogCancel" onclick="hideDialog()">取消</button>
+                <button class="dialog-btn dialog-btn-confirm" id="dialogConfirm" onclick="onDialogConfirm()">確認</button>
+            </div>
         </div>
     </div>
 
@@ -421,6 +515,7 @@
         var products = [];
         var cart = [];
         var isLoading = false;
+        var dialogCallback = null;
         
         // 問題7: 沒有錯誤處理的 API 呼叫
         function loadProducts() {
@@ -539,10 +634,35 @@
             }
             updateCartDisplay();
         }
+
+        function getCartItemName(productId) {
+            for (var i = 0; i < cart.length; i++) {
+                if (cart[i].product.id === productId) {
+                    return cart[i].product.name;
+                }
+            }
+            return '';
+        }
+
+        function confirmRemoveFromCart(productId) {
+            var productName = getCartItemName(productId);
+            showDialog(
+                '移除商品',
+                '確定要從購物車移除「' + productName + '」嗎？',
+                function() {
+                    removeFromCart(productId);
+                    showNotification(productName + ' 已從購物車移除');
+                }
+            );
+        }
         
         function updateQuantity(productId, change) {
             for (var i = 0; i < cart.length; i++) {
                 if (cart[i].product.id === productId) {
+                    if (change === -1 && cart[i].quantity === 1) {
+                        confirmRemoveFromCart(productId);
+                        return;
+                    }
                     cart[i].quantity += change;
                     if (cart[i].quantity <= 0) {
                         cart.splice(i, 1);
@@ -596,6 +716,7 @@
                                     '<span class="quantity-display">' + item.quantity + '</span>' +
                                     '<button class="quantity-btn" onclick="updateQuantity(' + item.product.id + ', 1)">+</button>' +
                                 '</div>' +
+                                '<button class="remove-item-btn" onclick="confirmRemoveFromCart(' + item.product.id + ')">移除</button>' +
                             '</div>' +
                         '</div>';
                 }
@@ -608,16 +729,70 @@
             sidebar.classList.toggle('open');
         }
         
-        // 問題12: 沒有適當的載入狀態和錯誤處理
-        function checkout() {
+        function showDialog(title, message, onConfirm) {
+            var overlay = document.getElementById('dialogOverlay');
+            var confirmBtn = document.getElementById('dialogConfirm');
+            var cancelBtn = document.getElementById('dialogCancel');
+
+            document.getElementById('dialogTitle').textContent = title;
+            document.getElementById('dialogMessage').textContent = message;
+            dialogCallback = onConfirm || null;
+
+            if (onConfirm) {
+                confirmBtn.textContent = '確認';
+                confirmBtn.className = 'dialog-btn dialog-btn-confirm';
+                cancelBtn.style.display = '';
+            } else {
+                confirmBtn.textContent = '知道了';
+                confirmBtn.className = 'dialog-btn dialog-btn-confirm';
+                cancelBtn.style.display = 'none';
+            }
+
+            overlay.classList.add('open');
+        }
+
+        function hideDialog() {
+            document.getElementById('dialogOverlay').classList.remove('open');
+            document.getElementById('dialogCancel').style.display = '';
+            document.getElementById('dialogConfirm').classList.remove('checkout');
+            dialogCallback = null;
+        }
+
+        function onDialogConfirm() {
+            if (dialogCallback) {
+                dialogCallback();
+            }
+            hideDialog();
+        }
+
+        function onDialogOverlayClick(event) {
+            if (event.target === document.getElementById('dialogOverlay')) {
+                hideDialog();
+            }
+        }
+
+        function confirmCheckout() {
             if (cart.length === 0) {
-                alert('購物車是空的！');
+                showDialog('無法結帳', '購物車是空的！');
                 return;
             }
-            
-            // 模擬結帳 API 呼叫，但沒有載入狀態
+
+            var total = 0;
+            for (var i = 0; i < cart.length; i++) {
+                total += cart[i].product.price * cart[i].quantity;
+            }
+
+            showDialog(
+                '確認結帳',
+                '共 ' + getTotalQuantity() + ' 件商品，總計 NT$ ' + total + '，確定要結帳嗎？',
+                processCheckout
+            );
+            document.getElementById('dialogConfirm').classList.add('checkout');
+        }
+
+        function processCheckout() {
             setTimeout(function() {
-                alert('結帳成功！感謝您的購買。');
+                showNotification('結帳成功！感謝您的購買。');
                 cart = [];
                 updateCartDisplay();
                 toggleCart();
@@ -709,6 +884,10 @@
             }
             
             if (e.target.closest('.cart-sidebar')) {
+                return;
+            }
+
+            if (e.target.closest('.dialog-overlay')) {
                 return;
             }
             
