@@ -313,6 +313,53 @@
                 transform: translateX(100%);
             }
         }
+
+        /*  */
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .search-btn,
+        .clear-search-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .search-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .clear-search-btn {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .no-results {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: #999;
+            padding: 40px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -323,6 +370,18 @@
                 🛒 購物車
                 <div class="cart-count" id="cartCount">0</div>
             </div>
+        </div>
+
+        <div class="search-bar">
+            <input
+                type="text"
+                id="searchInput"
+                class="search-input"
+                placeholder="搜尋商品..."
+                autocomplete="off"
+            />
+            <button class="search-btn" onclick="handleSearch()">搜尋</button>
+            <button class="clear-search-btn" onclick="clearSearch()">清除</button>
         </div>
         
         <div class="loading" id="loading">載入中...</div>
@@ -559,6 +618,58 @@
             setTimeout(function() {
                 toast.remove();
             }, 3000);
+        }
+
+        function searchProducts(keyword) {
+            keyword = keyword.trim();
+
+            // Empty search → show all products
+            if (keyword === '') {
+                renderProducts();
+                return;
+            }
+
+            var filteredProducts = [];
+            for (var i = 0; i < products.length; i++) {
+                if (products[i].name.indexOf(keyword) !== -1) {
+                    filteredProducts.push(products[i]);
+                }
+            }
+
+            renderFilteredProducts(filteredProducts, keyword);
+        }
+
+        function renderFilteredProducts(filteredProducts, keyword) {
+            var grid = document.getElementById('productsGrid');
+            grid.innerHTML = '';
+
+            if (filteredProducts.length === 0) {
+                grid.innerHTML = '<p class="no-results">找不到「' + keyword + '」相關商品</p>';
+                return;
+            }
+
+            for (var i = 0; i < filteredProducts.length; i++) {
+                var product = filteredProducts[i];
+                var productCard = document.createElement('div');
+                productCard.className = 'product-card';
+                productCard.innerHTML =
+                    '<div class="product-image">圖片載入中...</div>' +
+                    '<div class="product-title">' + product.name + '</div>' +
+                    '<div class="product-price">NT$ ' + product.price + '</div>' +
+                    '<button class="add-to-cart-btn" onclick="addToCart(' + product.id + ')">加入購物車</button>';
+
+                grid.appendChild(productCard);
+            }
+        }
+
+        function handleSearch() {
+            var keyword = document.getElementById('searchInput').value;
+            searchProducts(keyword);
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            renderProducts();
         }
         
         // 問題13: 沒有事件委託，每個按鈕都綁定事件
