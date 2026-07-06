@@ -267,6 +267,52 @@
             background-repeat: no-repeat;
             background-position: center;
         }
+
+        /* Toast notification */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background-color: #4CAF50;
+            color: white;
+            padding: 14px 20px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+            min-width: 250px;
+        }
+
+        .toast-icon {
+            font-size: 18px;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
     </style>
 </head>
 <body>
@@ -300,6 +346,8 @@
             <button class="checkout-btn" onclick="checkout()">結帳</button>
         </div>
     </div>
+
+    <div class="toast-container" id="toastContainer"></div>
     
     <script>
         // 問題6: 全域變數污染，沒有模組化
@@ -410,6 +458,7 @@
             }
             
             updateCartDisplay();
+            showNotification(product.name + ' 已加入購物車！');
             
             // 問題10: 沒有使用者反饋，加入購物車後沒有提示
         }
@@ -497,6 +546,19 @@
                 updateCartDisplay();
                 toggleCart();
             }, 2000);
+        }
+
+        function showNotification(message) {
+            var container = document.getElementById('toastContainer');
+            var toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = '<span class="toast-icon">✓</span><span>' + message + '</span>';
+            container.appendChild(toast);
+
+            // Remove after animation completes
+            setTimeout(function() {
+                toast.remove();
+            }, 3000);
         }
         
         // 問題13: 沒有事件委託，每個按鈕都綁定事件
